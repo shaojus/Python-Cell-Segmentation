@@ -1,0 +1,26 @@
+name: cellsegcopy
+channels:
+  - bioconda
+  - defaults
+  - conda-forge
+dependencies:
+  - geotiff
+  - imageio
+  - keras
+  - keras-applications
+  - keras-base
+  - keras-preprocessing
+  - numpy
+  - pip
+  - scikit-fmm
+  - scikit-image
+  - scipy
+  - tifffile
+  - tensorboard
+  - tensorflow
+  - tensorflow-base
+  - tensorflow-estimator
+  - pip:
+    - opencv-python
+prefix: //anaconda3/envs/cellsegcopy
+
