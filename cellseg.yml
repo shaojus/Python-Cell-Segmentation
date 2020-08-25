@@ -1,4 +1,4 @@
-name: cellsegcopy
+name: cellseg
 channels:
   - bioconda
   - defaults
@@ -22,5 +22,5 @@ dependencies:
   - tensorflow-estimator
   - pip:
     - opencv-python
-prefix: //anaconda3/envs/cellsegcopy
+prefix: //anaconda3/envs/cellseg
 
