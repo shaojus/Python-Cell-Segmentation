@@ -1,8 +1,11 @@
-import numpy as np 
+import numpy as np
 from skimage import measure, morphology
 import tifffile as tiff
 
-def MxIF_quantify(i, watcellseg, AFRemoved, AFList, PosList, mask, MemMask, OutPos, tumorMask = None):
+
+def MxIF_quantify(
+    i, watcellseg, AFRemoved, AFList, PosList, mask, MemMask, OutPos, tumorMask=None
+):
     """
     Quantify AFRemoved images
 
@@ -25,77 +28,121 @@ def MxIF_quantify(i, watcellseg, AFRemoved, AFList, PosList, mask, MemMask, OutP
 
     """
     properties = measure.regionprops(watcellseg)
-    props = np.asarray([(prop.label,prop.centroid[0],prop.centroid[1], prop.area) for prop in properties], order = 'F')
+    props = np.asarray(
+        [
+            (prop.label, prop.centroid[0], prop.centroid[1], prop.area)
+            for prop in properties
+        ],
+        order="F",
+    )
     Stats = {}
-    #Stats = measure.regionprops_table(watcellseg, properties = ('label', 'centroid', 'area'))
-    Stats.update({'Label' : props[:,0], 'Cell_Centroid_X' : props[:,1], 'Cell_Centroid_Y' : props[:,2], 'Cell_Area' : props[:,3]})
+    # Stats = measure.regionprops_table(watcellseg, properties = ('label', 'centroid', 'area'))
+    Stats.update(
+        {
+            "Label": props[:, 0],
+            "Cell_Centroid_X": props[:, 1],
+            "Cell_Centroid_Y": props[:, 2],
+            "Cell_Area": props[:, 3],
+        }
+    )
     s = watcellseg.shape
-    NoOvlp = np.zeros((s[0],s[1],3))
+    NoOvlp = np.zeros((s[0], s[1], 3))
     for j in range(len(AFList)):
         print(AFList[j] + " ")
-        AFim = tiff.imread(AFRemoved+'/'+AFList[j]+'_AFRemoved_'+OutPos[i]+'.tif')
+        AFim = tiff.imread(
+            AFRemoved + "/" + AFList[j] + "_AFRemoved_" + OutPos[i] + ".tif"
+        )
         AForig = np.copy(AFim)
         properties = measure.regionprops(watcellseg, AFim)
-        AFQuantCell = [np.median(prop.intensity_image[prop.intensity_image != 0]) if np.any(prop.intensity_image) else 0 for prop in properties]
-        Stats.update({'Median_Cell_' + AFList[j] : AFQuantCell})
-        AFim[mask == 0] = 0 
-        
+        AFQuantCell = [
+            np.median(prop.intensity_image[prop.intensity_image != 0])
+            if np.any(prop.intensity_image)
+            else 0
+            for prop in properties
+        ]
+        Stats.update({"Median_Cell_" + AFList[j]: AFQuantCell})
+        AFim[mask == 0] = 0
+
         if j == 0:
             properties = measure.regionprops(watcellseg, mask)
             Area = [prop.area for prop in properties]
-            Stats.update({'Nuc_Area' : Area})
-            
+            Stats.update({"Nuc_Area": Area})
+
         properties = measure.regionprops(watcellseg, AFim)
-        AFQuantNuc = [np.median(prop.intensity_image[prop.intensity_image != 0]) if np.any(prop.intensity_image) else 0 for prop in properties]
-        Stats.update({'Median_Nuc_' + AFList[j] : AFQuantNuc})
-        
-        #quantify cell edge (mem) stats
+        AFQuantNuc = [
+            np.median(prop.intensity_image[prop.intensity_image != 0])
+            if np.any(prop.intensity_image)
+            else 0
+            for prop in properties
+        ]
+        Stats.update({"Median_Nuc_" + AFList[j]: AFQuantNuc})
+
+        # quantify cell edge (mem) stats
         AFim = np.copy(AForig)
-        MemMask = watcellseg == 0 
+        MemMask = watcellseg == 0
         disksize = 5
-        
+
         MemMask = morphology.dilation(MemMask, morphology.square(disksize))
-        MemMask[watcellseg == 0] = 0 
-        MemMask[mask == 1] = 0 
-        AFim[MemMask == 0] = 0 
-        
+        MemMask[watcellseg == 0] = 0
+        MemMask[mask == 1] = 0
+        AFim[MemMask == 0] = 0
+
         if j == 0:
             properties = measure.regionprops(watcellseg, MemMask)
             Area = [prop.area for prop in properties]
-            Stats.update({'Mem_Area' : Area})
-        
+            Stats.update({"Mem_Area": Area})
+
         properties = measure.regionprops(watcellseg, AFim)
-        AFQuantMem = [np.median(prop.intensity_image[prop.intensity_image != 0]) if np.any(prop.intensity_image) else 0 for prop in properties]
-        Stats.update({'Median_Mem_' + AFList[j] : AFQuantMem})
-        
-        #quantify non nuclear and non mem (cyt) stats 
+        AFQuantMem = [
+            np.median(prop.intensity_image[prop.intensity_image != 0])
+            if np.any(prop.intensity_image)
+            else 0
+            for prop in properties
+        ]
+        Stats.update({"Median_Mem_" + AFList[j]: AFQuantMem})
+
+        # quantify non nuclear and non mem (cyt) stats
         AFim = np.copy(AForig)
         CytMask = (watcellseg > 0) & (mask == 0) & (MemMask == 0)
-        AFim[CytMask == 0] = 0 
-        
+        AFim[CytMask == 0] = 0
+
         if j == 0:
             properties = measure.regionprops(watcellseg, CytMask)
             Area = [prop.area for prop in properties]
-            Stats.update({'Cyt_Area' : Area})
-            
+            Stats.update({"Cyt_Area": Area})
+
         properties = measure.regionprops(watcellseg, AFim)
-        AFQuantCyt = [np.median(prop.intensity_image[prop.intensity_image != 0]) if np.any(prop.intensity_image) else 0 for prop in properties]
-        Stats.update({'Median_Cyt_' + AFList[j] : AFQuantCyt})
-        
+        AFQuantCyt = [
+            np.median(prop.intensity_image[prop.intensity_image != 0])
+            if np.any(prop.intensity_image)
+            else 0
+            for prop in properties
+        ]
+        Stats.update({"Median_Cyt_" + AFList[j]: AFQuantCyt})
+
     if tumorMask != None:
         properties = measure.regionprops(watcellseg, tumorMask)
-        tumQuantCell = [np.median(prop.intensity_image[prop.intensity_image != 0]) if np.any(prop.intensity_image) else 0 for prop in properties]
-        Stats.update({'Tumor' : tumQuantCell})
-        
-    CellBorders = morphology.dilation(watcellseg > 0, np.ones((3,3))) & (watcellseg == 0)
-    
-    NoOvlp[:,:,0] = MemMask + CellBorders
-    NoOvlp[:,:,1] = CytMask + CellBorders
-    NoOvlp[:,:,2] = mask + CellBorders 
+        tumQuantCell = [
+            np.median(prop.intensity_image[prop.intensity_image != 0])
+            if np.any(prop.intensity_image)
+            else 0
+            for prop in properties
+        ]
+        Stats.update({"Tumor": tumQuantCell})
+
+    CellBorders = morphology.dilation(watcellseg > 0, np.ones((3, 3))) & (
+        watcellseg == 0
+    )
+
+    NoOvlp[:, :, 0] = MemMask + CellBorders
+    NoOvlp[:, :, 1] = CytMask + CellBorders
+    NoOvlp[:, :, 2] = mask + CellBorders
     return (Stats, NoOvlp)
 
 
-def MxIF_quantify_stroma(i, watcellseg, AFRemoved, AFList, PosList, mask, pixadj, epiMask, OutPos):
+def MxIF_quantify_stroma(
+    i, watcellseg, AFRemoved, AFList, PosList, mask, pixadj, epiMask, OutPos
+):
     """
     Quantify stroma
 
@@ -117,48 +164,79 @@ def MxIF_quantify_stroma(i, watcellseg, AFRemoved, AFList, PosList, mask, pixadj
 
     """
     properties = measure.regionprops(watcellseg)
-    props = np.asarray([(prop.label,prop.centroid[0],prop.centroid[1], prop.area) for prop in properties], order = 'F')
+    props = np.asarray(
+        [
+            (prop.label, prop.centroid[0], prop.centroid[1], prop.area)
+            for prop in properties
+        ],
+        order="F",
+    )
     Stats = {}
-    #Stats = measure.regionprops_table(watcellseg, properties = ('label', 'centroid', 'area'))
-    Stats.update({'Label' : props[:,0], 'Cell_Centroid_X' : props[:,1], 'Cell_Centroid_Y' : props[:,2], 'Cell_Area' : props[:,3]})
+    # Stats = measure.regionprops_table(watcellseg, properties = ('label', 'centroid', 'area'))
+    Stats.update(
+        {
+            "Label": props[:, 0],
+            "Cell_Centroid_X": props[:, 1],
+            "Cell_Centroid_Y": props[:, 2],
+            "Cell_Area": props[:, 3],
+        }
+    )
     s = watcellseg.shape
-    NoOvlp = np.zeros((s[0],s[1],3))
+    NoOvlp = np.zeros((s[0], s[1], 3))
     for j in range(len(AFList)):
         print(AFList[j] + " ")
-        AFim = tiff.imread(AFRemoved+'/'+AFList[j]+'_AFRemoved_'+OutPos[i]+'.tif')
+        AFim = tiff.imread(
+            AFRemoved + "/" + AFList[j] + "_AFRemoved_" + OutPos[i] + ".tif"
+        )
         AForig = np.copy(AFim)
         properties = measure.regionprops(watcellseg, AFim)
-        AFQuantCell = [np.median(prop.intensity_image[prop.intensity_image != 0]) if np.any(prop.intensity_image) else 0 for prop in properties]
-        Stats.update({'Median_Cell_' + AFList[j] : AFQuantCell})
-        AFim[mask == 0] = 0 
-        
+        AFQuantCell = [
+            np.median(prop.intensity_image[prop.intensity_image != 0])
+            if np.any(prop.intensity_image)
+            else 0
+            for prop in properties
+        ]
+        Stats.update({"Median_Cell_" + AFList[j]: AFQuantCell})
+        AFim[mask == 0] = 0
+
         if i == 0:
             properties = measure.regionprops(watcellseg, mask)
             Area = [prop.area for prop in properties]
-            Stats.update({'Nuc_Area' : Area})
-            
+            Stats.update({"Nuc_Area": Area})
+
         properties = measure.regionprops(watcellseg, AFim)
-        AFQuantNuc = [np.median(prop.intensity_image[prop.intensity_image != 0]) if np.any(prop.intensity_image) else 0 for prop in properties]
-        Stats.update({'Median_Nuc_' + AFList[j] : AFQuantNuc})
-        
-        #quantify non nuclear and non mem (cyt) stats 
+        AFQuantNuc = [
+            np.median(prop.intensity_image[prop.intensity_image != 0])
+            if np.any(prop.intensity_image)
+            else 0
+            for prop in properties
+        ]
+        Stats.update({"Median_Nuc_" + AFList[j]: AFQuantNuc})
+
+        # quantify non nuclear and non mem (cyt) stats
         AFim = np.copy(AForig)
-        CytMask = (watcellseg > 0) & (mask == 0) 
-        AFim[CytMask == 0] = 0 
-        
+        CytMask = (watcellseg > 0) & (mask == 0)
+        AFim[CytMask == 0] = 0
+
         if i == 0:
             properties = measure.regionprops(watcellseg, CytMask)
             Area = [prop.area for prop in properties]
-            Stats.update({'Cyt_Area' : Area})
-            
-        properties = measure.regionprops(watcellseg, AFim)
-        AFQuantCyt = [np.median(prop.intensity_image[prop.intensity_image != 0]) if np.any(prop.intensity_image) else 0 for prop in properties]
-        Stats.update({'Median_Cyt_' + AFList[j] : AFQuantCyt})
-        
-    CellBorders = morphology.dilation(watcellseg > 0, np.ones((3,3))) & (watcellseg == 0)
-    
-    NoOvlp[:,:,0] = CellBorders
-    NoOvlp[:,:,1] = CytMask + CellBorders
-    NoOvlp[:,:,2] = mask + CellBorders 
-    return (Stats, NoOvlp)
+            Stats.update({"Cyt_Area": Area})
 
+        properties = measure.regionprops(watcellseg, AFim)
+        AFQuantCyt = [
+            np.median(prop.intensity_image[prop.intensity_image != 0])
+            if np.any(prop.intensity_image)
+            else 0
+            for prop in properties
+        ]
+        Stats.update({"Median_Cyt_" + AFList[j]: AFQuantCyt})
+
+    CellBorders = morphology.dilation(watcellseg > 0, np.ones((3, 3))) & (
+        watcellseg == 0
+    )
+
+    NoOvlp[:, :, 0] = CellBorders
+    NoOvlp[:, :, 1] = CytMask + CellBorders
+    NoOvlp[:, :, 2] = mask + CellBorders
+    return (Stats, NoOvlp)
