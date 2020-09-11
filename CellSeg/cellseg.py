@@ -13,8 +13,8 @@ def bwperim(mask):
     se = morphology.disk(1)
     b = np.pad(mask, (1,1), 'constant')
     b_eroded = morphology.binary_erosion(b, se)
-    p = b ^ b_eroded #bitwise xor 
-    shape = p.shape
+    p = b ^ b_eroded  # bitwise xor
+    # shape = p.shape  # unused
     p = p[1:p.shape[0]-1,1:p.shape[1]-1]
     return p
 
@@ -138,11 +138,11 @@ def extend2(obj, backdrop, hlen):
         test = temparray[j]
         etest = endpointarray[j]
         test = morphology.thin(test)
-        (r,c) = test.shape
+        (r,_) = test.shape
         length = 1000
         etest = bwmorph.endpoints(test) 
         etest = (etest - totalcanvas) > 0
-        (y, x) = np.nonzero(etest)
+        # (y, x) = np.nonzero(etest)  # unused
         trimmed = bwmorph.spur(test, trimBy)
         trimSeg = test * (test ^ trimmed)
         #new2 = trimSeg
@@ -160,7 +160,7 @@ def extend2(obj, backdrop, hlen):
         for d in range(1, num+1):
             tempT = trimL == d
             kT = etest & tempT
-            (yK, xK) = np.nonzero(kT)
+            (yK, _) = np.nonzero(kT)
             a = yK.size
             if a>1:
                 tempT = morphology.thin(tempT)
@@ -179,19 +179,19 @@ def extend2(obj, backdrop, hlen):
                 tempendT = np.vstack((tempendT, [k, tempT, kT]))
         for row in tempendT:
             testT = row[1]
-            etestT = row[2]
+            # etestT = row[2]  # unused
             testT = morphology.thin(testT)
-            (rT, cT) = testT.shape
+            # (rT, cT) = testT.shape  # unused
             
             #find location of endpoints 
             endpointsT = bwmorph.endpoints(testT)
             (yy, xx) = np.nonzero(endpointsT)
             
             #connect endpoints 
-            distmax = np.vstack((xx, yy)) #x coords on first row y on second row
-            distmax = ndarray.transpose(distmax) #is it easier to transpose twice and stack or stack and tranpose a bigger array?
+            distmax = np.vstack((xx, yy)) #  x coords on first row y on second row
+            distmax = ndarray.transpose(distmax) #  is it easier to transpose twice and stack or stack and tranpose a bigger array?
             distancematrix = spatial.distance.squareform(spatial.distance.pdist(distmax))
-            (one, two) = np.argwhere(distancematrix == np.amax(distancematrix))
+            (one, _) = np.argwhere(distancematrix == np.amax(distancematrix))
             i1 = one[0]
             i2 = one[1]
             new3 = np.zeros(obj.shape)
@@ -522,7 +522,7 @@ def finalconnect_2(obj, backdrop, hlen):
         test = temparray[j]
         etest = endpointarray[j]
         test = morphology.thin(test)
-        (r,c) = test.shape
+        (r,_) = test.shape
         new3 = morphology.thin(test)
         endPoints = bwmorph.endpoints(new3)
         yyxx = np.argwhere(endPoints == 1)
@@ -538,8 +538,8 @@ def finalconnect_2(obj, backdrop, hlen):
         index_coord = np.unravel_index(index, new3.shape, order = 'F') 
         new3[index_coord] = 1
         L = measure.label(new3)
-        thinner = morphology.thin(L)
-        endPoints2 = bwmorph.endpoints(thinner)
+        # thinner = morphology.thin(L)  # unused
+        # endPoints2 = bwmorph.endpoints(thinner)  # unused
         properties = measure.regionprops(L)
         props = [(prop.orientation) for prop in properties]
         O = np.mean(props)
@@ -621,7 +621,7 @@ def finalconnect_2(obj, backdrop, hlen):
         x1y1 = np.argwhere(ep2 == 1)
         th_ends = np.vstack((xy,x1y1))
         distancematrix = spatial.distance.squareform(spatial.distance.pdist(th_ends))
-        (one, two) = np.argwhere(distancematrix == np.max(distancematrix))
+        # (one, two) = np.argwhere(distancematrix == np.max(distancematrix))  # unused?
         ind = np.argwhere(ep2 == 1)
         if ind.size == 0:
             ep2 = epx
@@ -714,7 +714,7 @@ def findClosestEndpoint(index, endpoints):
     """
     reference = endpoints[index]
     rc = reference.shape
-    r1c1 = len(endpoints)
+    # r1c1 = len(endpoints)  # unused?
     distance2 = np.zeros((rc[0],len(endpoints)))
     index2 = np.zeros((rc[0],len(endpoints)))
     for i in range(rc[0]):
@@ -760,7 +760,7 @@ def findDistanceEndpoint(mask):
     number = np.max(mask)
     endpoints = labelendpoints(mask)
     for i in range(number):
-        (x, y, d) = findClosestEndpoint(i, endpoints)
+        (_, _, d) = findClosestEndpoint(i, endpoints)
         distance.append(d)
     distance = sorted(distance)
     output = distance[0]
@@ -1016,7 +1016,7 @@ def longestConstrainedPath(bwin):
     endpoints = np.argwhere(bwmorph.endpoints(thinnedImg)>0)
     if endpoints.shape[0] == 2:
         return thinnedImg
-    mask = bwmorph.endpoints(thinnedImg)>0
+    # mask = bwmorph.endpoints(thinnedImg)>0  # unused
     bwdg = skfmm.distance(thinnedImg)
     bwOut = np.zeros(thinnedImg.shape)
     startPoint = np.argwhere(bwdg == np.max(bwdg))
@@ -1113,7 +1113,7 @@ def NucCountBatch(memx, nuc, tube, total, mucLoc, dapi, sup):
         return
     
     nuc = nuc * (nuc ^ mask2)
-    nuc = morphology.remove_small_objects(nuc, 13)
+    nuc = morphology.remove_small_objects(nuc, 13)  # UserWarning: Only one label was provided to `remove_small_objects`. Did you mean to use a boolean array?
     
     #find cell_mask objects with multiple nuclei 
     k2 = multiNuc(mem, nuc)
@@ -1121,7 +1121,7 @@ def NucCountBatch(memx, nuc, tube, total, mucLoc, dapi, sup):
     #find all indices in k2
     indices = np.unique(k2)
     indices = indices[indices != 0]
-    rc = np.size(indices)
+    # rc = np.size(indices)  # unused
     k3 = k2 > 0
     sMask = np.shape(k3)
     for index in indices:
@@ -1138,7 +1138,7 @@ def NucCountBatch(memx, nuc, tube, total, mucLoc, dapi, sup):
         if subObject.size > 160000:
             continue
         
-        lines = reseg(subObject, subTotal, -1)
+        lines = reseg(singleobject=subObject, total=subTotal, numx=-1)
         linesSub = np.zeros(sMask)
         linesSub[BBox[0]:BBox[2], BBox[1]:BBox[3]] = lines
         linesSub = np.array(linesSub, dtype = np.int16)
@@ -1182,8 +1182,8 @@ def NucCountBatch(memx, nuc, tube, total, mucLoc, dapi, sup):
     total = morphology.remove_small_objects(totalorig, 2, connectivity = 2)
     
     indices = np.unique(r3)
-    indices = indices[indices != 0]    
-    rc = np.shape(indices)
+    indices = indices[indices != 0]
+    # rc = np.shape(indices)  # unused
     k4 = r3 > 0
     for i in indices:
         tempobject = np.isin(r3, i)
@@ -1198,7 +1198,7 @@ def NucCountBatch(memx, nuc, tube, total, mucLoc, dapi, sup):
         if subObject.size > 160000:
             continue
         
-        lines = reseg(subObject, subTotal, -1)
+        lines = reseg(singleobject=subObject, total=subTotal, numx=-1)
         linesSub = np.zeros(sMask)
         linesSub[BBox[0]:BBox[2], BBox[1]:BBox[3]] = lines
         linesSub = np.array(linesSub, dtype = np.int16)
@@ -1232,7 +1232,7 @@ def NucCountBatch(memx, nuc, tube, total, mucLoc, dapi, sup):
         large_ones = props[:,0][Areas > 2500]
         large = np.isin(L, large_ones) * L 
     
-    #circle metric
+    # circle metric
     bw = measure.label(large, connectivity = 1)
     if not np.max(bw) == 0:
         properties = measure.regionprops(bw)
@@ -1244,7 +1244,7 @@ def NucCountBatch(memx, nuc, tube, total, mucLoc, dapi, sup):
         remain = props[:,0][Metrics >= 0.15]
         erase1 = np.isin(bw, erase) * bw
         remain1 = np.isin(bw, remain) * bw
-        #keep long cells 
+        # keep long cells 
         L = measure.label(remain1, connectivity = 1)
         properties = measure.regionprops(L)
         props = np.asarray([(prop.label, prop.eccentricity) for prop in properties], order = 'F')
@@ -1259,7 +1259,7 @@ def NucCountBatch(memx, nuc, tube, total, mucLoc, dapi, sup):
     return (mem5, out2)
 
 
-def reseg(singleobject, total, numx, index):
+def reseg(singleobject, total, numx, index=None):
     """
     Resegment a single cell with greater than 10% internal membrane 
 
@@ -1289,7 +1289,7 @@ def reseg(singleobject, total, numx, index):
     del mw5
     e2 = morphology.binary_dilation(e, se)
     added = added+e2
-    inv = util.invert(morphology.remove_small_holes(added, 15*pixadj))
+    inv = util.invert(morphology.remove_small_holes(added, 15*pixadj))  # UserWarning: Any labeled images will be returned as a boolean array. Did you mean to use a boolean array?
     L = measure.label(inv, connectivity = 1)
     properties = measure.regionprops(L)
     
@@ -1384,11 +1384,11 @@ def ReSegCells(cellmask, total):
                                      np.array(total, dtype = bool))
     props = np.asarray([(prop.label, prop.area,prop.mean_intensity) if prop.area > 600 
                         else (prop.label, prop.area, 0) for prop in properties], order = 'F')
-    Areas = props[:,1]
+    # Areas = props[:,1]  # unused
     Intensities = props[:,2]
     keep = []
     keep = props[:,0][Intensities>0.1] 
-    #90 cells kept, 108 in matlab, 108 if same selem is used 
+    # 90 cells kept, 108 in matlab, 108 if same selem is used 
     print('Cell ReSeg ' + str(len(keep)) + ' objects; ')
     maskout = np.array(cellmask, dtype = np.int16)
     sMask = maskout.shape
@@ -1430,13 +1430,13 @@ def ridSmall(k3, nuc):
         properties = measure.regionprops(L, np.array(nuc, dtype = bool))
         props = np.asarray([(prop.label, prop.area,prop.mean_intensity) if prop.area > 50 
                             else (prop.label, prop.area, 0) for prop in properties], order = 'F')
-        Areas = props[:,1]
+        # Areas = props[:,1]  # unused
         Intensities = props[:,2]
         keep = []
         keep = props[:,0][Intensities>0]
         k4 = np.isin(L,keep) * L
         return k4
-    
+
 
 def segmore(name, s):
     """
@@ -1458,8 +1458,8 @@ def segmore(name, s):
         I = name 
     bw = I
     D = -ndimage.morphology.distance_transform_edt(np.logical_not(bw) == 0)
-    Ld = morphology.watershed(D, watershed_line = True)
-    bw2 = np.where(Ld == 0, 0, bw)
+    # Ld = morphology.watershed(D, watershed_line = True)  # unused
+    # bw2 = np.where(Ld == 0, 0, bw)  # unused
     mask = imextendedmin(D,s) 
     D2 = imimposemin(D, mask)
     Ld2 = morphology.watershed(D2, watershed_line = True)
@@ -1591,7 +1591,7 @@ def stromal_nuclei_segmentation(image):
 
     """
     image = image[:,:,0]
-    threshold = 0.9 
+    threshold = 1.0  # threshold for binarization
     total = image.size
     
     #apply top hat and bottom hat filter 
@@ -1621,8 +1621,8 @@ def stromal_nuclei_segmentation(image):
     adjustedImage = exposure.rescale_intensity(filterImage, (low, highin * 255), (0, 255))
     adjustedImage = exposure.adjust_gamma(adjustedImage, 1.8)
     
-    #image binarizaiton, threshold chosen based on experience 
-    binarization = adjustedImage > 1
+    #image binarization, threshold chosen based on experience 
+    binarization = adjustedImage > threshold
     #se2 = morphology.disk(5)
     se2 = np.array([[0, 0, 1, 1, 1, 1, 1, 0, 0],
                     [0, 1, 1, 1, 1, 1, 1, 1, 0],
