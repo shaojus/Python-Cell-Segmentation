@@ -32,7 +32,7 @@ def branchpoint_fcn(n):
 def count_fcn(n):
     nhood = hood(n)
     if nhood[1, 1] == 1:
-        (L, count) = measure.label(~nhood, return_num=True, connectivity=1)
+        (_, count) = measure.label(~nhood, return_num=True, connectivity=1)
         return count
     else:
         return 0
@@ -58,7 +58,7 @@ def branchpoints(image):
 def endpoint_fcn(n):
     nhood = hood(n)
     if nhood[1, 1] == 1:
-        (L, count) = measure.label(~nhood, return_num=True, connectivity=1)
+        (_, count) = measure.label(~nhood, return_num=True, connectivity=1)
         if count == 1:
             return 1
         else:
@@ -1586,20 +1586,7 @@ def too_few_neighbors(n):
     return (h * NEIGHBOR_MASK).sum() < 2
 
 
-def branchpoint_fcn(n):
-    nhood = hood(n)
-    if nhood[1, 1] == 1:
-        count = np.sum(nhood) - 1
-        if count > 2:
-            return 1
-        else:
-            return 0
-    else:
-        return 0
-
-
-DEL_HOOD_MAPPER = np.array([[3, 2, 1], [4, 8, 0], [5, 6, 7]])
-
-
 def hood2lu(hood, lut_mask=LUT_DEL_MASK):
     return (hood * lut_mask).sum()
+
+DEL_HOOD_MAPPER = np.array([[3, 2, 1], [4, 8, 0], [5, 6, 7]])

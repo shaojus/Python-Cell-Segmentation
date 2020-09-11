@@ -37,7 +37,7 @@ def cell_shape_images(img):
 
 def CellShapeAutoencoder(FileList, train_frac):
     # concatenate all the cellImages into one array
-    trainList = []
+    # trainList = []  # unused
     CellImages = np.empty((0, 128, 128))
     Pos = []
     ID = []
@@ -54,7 +54,7 @@ def CellShapeAutoencoder(FileList, train_frac):
     selected[indices] = 1  # array to indicate indices of selected cells for training
     TrainCells = CellImages[indices, :, :]
     TrainCells = TrainCells.reshape((len(TrainCells), 128, 128, 1))
-    hiddenSize = 256
+    # hiddenSize = 256  # unused
 
     # TrainCells = TrainCells.reshape((len(TrainCells), 16384))
     input_img = layers.Input((128, 128, 1))
