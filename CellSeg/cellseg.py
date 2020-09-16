@@ -3,7 +3,7 @@ import math
 from . import bwmorph
 import skfmm
 from .common import BBoxCalc, imimposemin
-from skimage import io, morphology, exposure, filters, measure, util
+from skimage import io, morphology, exposure, filters, measure, util, segmentation
 from numpy import ndarray
 from scipy import ndimage, spatial, signal
 from operator import itemgetter
@@ -1634,11 +1634,11 @@ def segmore(name, s):
         I = name
     bw = I
     D = -ndimage.morphology.distance_transform_edt(np.logical_not(bw) == 0)
-    # Ld = morphology.watershed(D, watershed_line = True)  # unused
+    # Ld = segmentation.watershed(D, watershed_line = True)  # unused
     # bw2 = np.where(Ld == 0, 0, bw)  # unused
     mask = imextendedmin(D, s)
     D2 = imimposemin(D, mask)
-    Ld2 = morphology.watershed(D2, watershed_line=True)
+    Ld2 = segmentation.watershed(D2, watershed_line=True)
     bw3 = np.where(Ld2 == 0, 0, bw)
     return bw3
 
@@ -1836,7 +1836,7 @@ def stromal_nuclei_segmentation(image):
     D[~final] = float("-inf")
     D = imhmin(D, 1, 1)
 
-    L = morphology.watershed(D, connectivity=2, watershed_line=True)
+    L = segmentation.watershed(D, connectivity=2, watershed_line=True)
 
     B = L > 1
     # B[B == 1] = 0
