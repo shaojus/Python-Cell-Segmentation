@@ -5,10 +5,9 @@ import platform
 import cv2
 import time
 import csv
-from skimage import io, morphology, exposure, filters, measure, util
+from skimage import io, morphology, exposure, filters, measure, util, segmentation
 from scipy import signal, ndimage
 from itertools import zip_longest
-import tifffile as tiff
 from .common import imimposemin
 from .cellseg import ReSegCells, NucCountBatch, stromal_nuclei_segmentation
 from .cellshape import cell_shape_images, CellShapeAutoencoder
@@ -228,58 +227,58 @@ def CellSeg(SlideDir, quantify, shape, stroma, tumor, start):
     print("Segmentation of:", SlideDir, ";", str(len(PosList)), " Positions;\n")
 
     # Segmentation and Quantification for each position
-    for i in (start, range(len(PosList))):
-        print(OutPos[i] + ":")
+    for i in range(start, len(PosList)):
+        print(f"{OutPos[i]}:")
         # make Stacks of AFRemoved images and Dapi if they don't exist
-        if not os.path.exists(OutDir[10] + OutPos[i] + "_stack.tif"):
-            print("Stack:", OutPos[i])
+        if not os.path.exists(f"{OutDir[10]}{OutPos[i]}_stack.tif"):
+            print(f"Stack: {OutPos[i]}")
             # form tif image stack for each position with images from each marker
-            io.imsave(OutDir[10] + OutPos[i] + "_stack.tif", tiff.imread(DapiList[i]))
+            io.imsave(f"{OutDir[10]}{OutPos[i]}_stack.tif", io.imread(DapiList[i]))
             for j in range(
                 len(AFList)
             ):  # loop through AFRemoved images and append to tiff stack
                 skimage.external.tifffile.imsave(
-                    OutDir[10] + OutPos[i] + "_stack.tif",
-                    tiff.imread(
-                        AFRemoved + "/" + AFList[j] + "_AFRemoved_" + OutPos[i] + ".tif"
+                    f"{OutDir[10]}{OutPos[i]}_stack.tif",
+                    io.imread(
+                        f"{AFRemoved}/{AFList[j]}_AFRemoved_{OutPos[i]}.tif"
                     ),
                     append=True,
                 )
         # Check for probability files
         if not os.path.exists(
-            OutDir[4] + "epi_" + OutPos[i] + "_stack_Probabilities.png"
+            f"{OutDir[4]}epi_{OutPos[i]}_stack_Probabilities.png"
         ):
             print("No Epithelial Probability File")
             continue
         if not os.path.exists(
-            OutDir[4] + "mem_" + OutPos[i] + "_stack_Probabilities.png"
+            f"{OutDir[4]}mem_{OutPos[i]}_stack_Probabilities.png"
         ):
             print("No Membrane/Nucleus Probabilty File")
             continue
 
         # nuclear segmentation and generate supermembrane and binary membrane mask
         if not (
-            os.path.exists(OutDir[7] + "NucMask_" + OutPos[i] + ".png")
-            or os.path.exists(OutDir[11] + "SuperMem_" + OutPos[i] + ".tif")
-            or os.path.exists(OutDir[5] + "MemMask_" + OutPos[i] + ".png")
+            os.path.exists(f"{OutDir[7]}NucMask_{OutPos[i]}.png")
+            or os.path.exists(f"{OutDir[11]}SuperMem_{OutPos[i]}.tif")
+            or os.path.exists(f"{OutDir[5]}MemMask_{OutPos[i]}.png")
         ):
             # read in membrane probability file
             Probs = io.imread(
-                OutDir[4] + "mem_" + OutPos[i] + "_stack_Probabilities.png"
+                f"{OutDir[4]}mem_{OutPos[i]}_stack_Probabilities.png"
             )
 
             # threshold with nuclear probability >0.6 for nuclear mask
             mask = np.where(Probs[:, :, 1] > 255 * 0.6, np.uint8(255), np.uint8(0))
-            io.imsave(OutDir[7] + "NucMask_" + OutPos[i] + ".png", mask)
-            io.imsave(OutDir[11] + "SuperMem_" + OutPos[i] + ".tif", Probs[:, :, 0])
+            io.imsave(f"{OutDir[7]}NucMask_{OutPos[i]}.png", mask)
+            io.imsave(f"{OutDir[11]}SuperMem_{OutPos[i]}.tif", Probs[:, :, 0])
             # thresholding for membrane mask
             MemMask = np.where(Probs[:, :, 0] > 255 * 0.6, np.uint8(255), np.uint8(0))
-            io.imsave(OutDir[5] + "MemMask_" + OutPos[i] + ".png", MemMask)
+            io.imsave(f"{OutDir[5]}MemMask_{OutPos[i]}.png", MemMask)
         else:
             # read files if previously generated
-            mask = io.imread(OutDir[7] + "NucMask_" + OutPos[i] + ".png")
-            SuperMem = tiff.imread(OutDir[11] + "SuperMem_" + OutPos[i] + ".tif")
-            MemMask = io.imread(OutDir[5] + "MemMask_" + OutPos[i] + ".png")
+            mask = io.imread(f"{OutDir[7]}NucMask_{OutPos[i]}.png")
+            SuperMem = io.imread(f"{OutDir[11]}SuperMem_{OutPos[i]}.tif")
+            MemMask = io.imread(f"{OutDir[5]}MemMask_{OutPos[i]}.png")
 
         mask = np.where(mask > 0, np.uint8(1), np.uint8(0))  # make nuclear mask binary
 
@@ -289,7 +288,7 @@ def CellSeg(SlideDir, quantify, shape, stroma, tumor, start):
         mask = morphology.binary_opening(mask, selem)
 
         # remove blurred nuclear regions
-        mask = np.multiply(mask, blurimg2_batch(tiff.imread(DapiList[i])))
+        mask = np.multiply(mask, blurimg2_batch(io.imread(DapiList[i])))
 
         s = mask.shape
         pixadj = 1
@@ -319,45 +318,45 @@ def CellSeg(SlideDir, quantify, shape, stroma, tumor, start):
         MemMask = morphology.thin(MemMask)
 
         # generate cell (re)segmentation and nuclear segmentation images
-        if (not os.path.exists(OutDir[8] + "NucMaskFinal_" + OutPos[i] + ".png")) or (
-            not os.path.exists(OutDir[1] + "CellSegFinal_" + OutPos[i] + ".tif")
+        if (not os.path.exists(f"{OutDir[8]}NucMaskFinal_{OutPos[i]}.png")) or (
+            not os.path.exists(f"{OutDir[1]}CellSegFinal_{OutPos[i]}.tif")
         ):
 
             print("CellSeg;")
 
-            if not (os.path.exists(OutDir[0] + "L2_" + OutPos[i] + "tif")):
+            if not (os.path.exists(f"{OutDir[0]}L2_{OutPos[i]}.tif")):
                 L2 = np.array(np.add(util.invert(epiMask), MemMask), dtype=np.uint8)
 
                 # watershed segmentation with nuclei as basins
-                L2 = morphology.watershed(imimposemin(L2, mask), watershed_line=True)
+                L2 = segmentation.watershed(imimposemin(L2, mask), watershed_line=True)
                 L2 = np.array(L2, dtype=np.float_)
 
                 # return cells only in epithelial mask
                 L2 = np.multiply(L2, epiMask)
-                io.imsave(OutDir[0] + "L2_" + OutPos[i] + ".tif", np.int16(L2))
+                io.imsave(f"{OutDir[0]}L2_{OutPos[i]}.tif", np.int16(L2))
 
             else:
-                L2 = tiff.imread(OutDir[0] + "L2_" + OutPos[i] + ".tif")
-            if not (os.path.exists(OutDir[0] + "CellSeg_" + OutPos[i] + ".tif")):
+                L2 = io.imread(f"{OutDir[0]}L2_{OutPos[i]}.tif")
+            if not (os.path.exists(f"{OutDir[0]}CellSeg_{OutPos[i]}.tif")):
                 MemMask = np.array(
-                    io.imread(OutDir[5] + "MemMask_" + OutPos[i] + ".png"), dtype=bool
+                    io.imread(f"{OutDir[5]}MemMask_{OutPos[i]}.png"), dtype=bool
                 )
                 start = time.time()
                 CellSeg = ReSegCells(L2, MemMask)
                 end = time.time()
                 print(end - start)
                 io.imsave(
-                    OutDir[0] + "CellSeg_" + OutPos[i] + ".tif",
+                    f"{OutDir[0]}CellSeg_{OutPos[i]}.tif",
                     np.array(CellSeg, dtype=np.int16),
                 )
             else:
-                CellSeg = tiff.imread(OutDir[0] + "CellSeg_" + OutPos[i] + ".tif")
+                CellSeg = io.imread(f"{OutDir[0]}CellSeg_{OutPos[i]}.tif")
 
-            if not (os.path.exists(OutDir[1] + "CellSegFinal_" + OutPos[i] + ".tif")):
-                CellSeg = tiff.imread(OutDir[0] + "CellSeg_" + OutPos[i] + ".tif")
-                SuperMem = tiff.imread(OutDir[11] + "SuperMem_" + OutPos[i] + ".tif")
+            if not (os.path.exists(f"{OutDir[1]}CellSegFinal_{OutPos[i]}.tif")):
+                CellSeg = io.imread(f"{OutDir[0]}CellSeg_{OutPos[i]}.tif")
+                SuperMem = io.imread(f"{OutDir[11]}SuperMem_{OutPos[i]}.tif")
                 Probs = io.imread(
-                    OutDir[4] + "mem_" + OutPos[i] + "_stack_Probabilities.png"
+                    f"{OutDir[4]}mem_{OutPos[i]}_stack_Probabilities.png"
                 )
                 # check for cells with multiple nuclei and re-segment if they exist
                 (watcellseg, mask) = NucCountBatch(
@@ -392,29 +391,29 @@ def CellSeg(SlideDir, quantify, shape, stroma, tumor, start):
                 watcellseg = measure.label(watcellseg, connectivity=1)
 
                 io.imsave(
-                    OutDir[1] + "CellSegFinal_" + OutPos[i] + ".tif",
+                    f"{OutDir[1]}CellSegFinal_{OutPos[i]}.tif",
                     np.array(watcellseg, dtype=np.uint16),
                 )
                 io.imsave(
-                    OutDir[8] + "NucMaskFinal_" + OutPos[i] + ".png",
+                    f"{OutDir[8]}NucMaskFinal_{OutPos[i]}.png",
                     np.array(255 * (mask > 0), dtype=np.uint8),
                 )
 
             else:
-                watcellseg = tiff.imread(
-                    OutDir[1] + "CellSegFinal_" + OutPos[i] + ".tif"
+                watcellseg = io.imread(
+                    f"{OutDir[1]}CellSegFinal_{OutPos[i]}.tif"
                 )
-                mask = io.imread(OutDir[8] + "NucMaskFinal_" + OutPos[i] + ".png") > 0
+                mask = io.imread(f"{OutDir[8]}NucMaskFinal_{OutPos[i]}.png") > 0
         else:
-            watcellseg = tiff.imread(OutDir[1] + "CellSegFinal_" + OutPos[i] + ".tif")
-            mask = io.imread(OutDir[8] + "NucMaskFinal_" + OutPos[i] + ".png") > 0
+            watcellseg = io.imread(f"{OutDir[1]}CellSegFinal_{OutPos[i]}.tif")
+            mask = io.imread(f"{OutDir[8]}NucMaskFinal_{OutPos[i]}.png") > 0
 
         # Quantification if specified
         if quantify == 1:
 
             if os.path.exists(
-                OutDir[9] + "PosStats_" + OutPos[i] + ".csv"
-            ) and os.path.exists(OutDir[6] + "Novlp_" + OutPos[i] + ".png"):
+                f"{OutDir[9]}PosStats_{OutPos[i]}.csv"
+            ) and os.path.exists(f"{OutDir[6]}Novlp_{OutPos[i]}.png"):
                 continue
             else:
                 if np.max(watcellseg) == 0:
@@ -428,14 +427,14 @@ def CellSeg(SlideDir, quantify, shape, stroma, tumor, start):
 
                 if tumor == 1:
                     if not os.path.exists(
-                        OutDir[4] + "TumorMask_" + OutPos[i] + ".png"
+                        f"{OutDir[4]}TumorMask_{OutPos[i]}.png"
                     ):
                         tumorMask = io.imread(
-                            OutDir[4] + "tum_" + OutPos[i] + "_stack_Probabilities.png"
+                            f"{OutDir[4]}tum_{OutPos[i]}_stack_Probabilities.png"
                         )
                         tumorMask = ML_probability(tumorMask, pixadj * 0.01, 0.5)
                         io.imsave(
-                            OutDir[4] + "TumorMask_" + OutPos[i] + ".png",
+                            f"{OutDir[4]}TumorMask_{OutPos[i]}.png",
                             np.array(255 * (tumorMask > 0), np.uint8),
                         )
                         (Stats, NoOvlp) = MxIF_quantify(
@@ -453,27 +452,27 @@ def CellSeg(SlideDir, quantify, shape, stroma, tumor, start):
                 # format data table and write
                 transposed_data = list(zip_longest(*Stats.values()))
                 with open(
-                    OutDir[9] + "PosStats_" + OutPos[i] + ".csv", "w", newline=""
+                    r"{OutDir[9]}PosStats_{OutPos[i]}.csv", "w", newline=""
                 ) as f:
                     writer = csv.writer(f)
                     writer.writerow(Stats.keys())
                     writer.writerows(transposed_data)
 
-                io.imsave(OutDir[6] + "Novlp_" + OutPos[i] + ".png", NoOvlp)
+                io.imsave(r"{OutDir[6]}Novlp_{OutPos[i]}.png", NoOvlp)
 
         # Stromal Quantification
         if stroma == 1:
             print("Stromal quant:")
             if not os.path.exists(
-                OutDir[4] + "str_" + OutPos[i] + "_stack_Probabilities.png"
+                f"{OutDir[4]}str_{OutPos[i]}_stack_Probabilities.png"
             ):
                 ("No epithelial probability file")
             elif not os.path.exists(
-                OutDir[9] + "StrPosStats_" + OutPos[i] + ".csv"
-            ) or not os.path.exists(OutDir[6] + "StrNovlp" + OutPos[i] + ".png"):
+                f"{OutDir[9]}StrPosStats_{OutPos[i]}.csv"
+            ) or not os.path.exists(f"{OutDir[6]}StrNovlp{OutPos[i]}.png"):
                 stromal_nuclei = stromal_nuclei_segmentation(
                     io.imread(
-                        OutDir[4] + "str_" + OutPos[i] + "_stack_Probabilities.png"
+                        f"{OutDir[4]}str_{OutPos[i]}_stack_Probabilities.png"
                     )
                 )
                 stromal_nuclei[epiMask == 1] = 0
@@ -481,17 +480,17 @@ def CellSeg(SlideDir, quantify, shape, stroma, tumor, start):
                     stromal_nuclei, morphology.square(5)
                 )  # dilate nuclei
                 # watershed on dilated cells with nuclei as seed points
-                stromal_label = morphology.watershed(
+                stromal_label = segmentation.watershed(
                     imimposemin(np.array(stromal_grow, np.uint8), stromal_nuclei),
                     watershed_line=True,
                 )
                 stromal_label[stromal_grow == 0] = 0
                 io.imsave(
-                    OutDir[1] + "StrCellSegFinal_" + OutPos[i] + ".tif",
+                    f"{OutDir[1]}StrCellSegFinal_{OutPos[i]}.tif",
                     np.array(stromal_label, np.uint16),
                 )
                 io.imsave(
-                    OutDir[8] + "StrNucMaskFinal_" + OutPos[i] + ".png",
+                    f"{OutDir[8]}StrNucMaskFinal_{OutPos[i]}.png",
                     255 * np.array(stromal_nuclei, np.uint8),
                 )
 
@@ -509,13 +508,13 @@ def CellSeg(SlideDir, quantify, shape, stroma, tumor, start):
                 )
                 transposed_data = list(zip_longest(*strStats.values()))
                 with open(
-                    OutDir[9] + "strPosStats_" + OutPos[i] + ".csv", "w", newline=""
+                    f"{OutDir[9]}strPosStats_{OutPos[i]}.csv", "w", newline=""
                 ) as f:
                     writer = csv.writer(f)
                     writer.writerow(strStats.keys())
                     writer.writerows(transposed_data)
 
-                io.imsave(OutDir[6] + "strNovlp_" + OutPos[i] + ".png", strNoOvlp)
+                io.imsave(f"{OutDir[6]}strNovlp_{OutPos[i]}.png", strNoOvlp)
             else:
                 continue
 
@@ -523,14 +522,14 @@ def CellSeg(SlideDir, quantify, shape, stroma, tumor, start):
         if shape == 1:
             # load final segmentation image, extract cells, save as npz files
             if os.path.exists(
-                OutDir[1] + "CellSegFinal_" + OutPos[i] + ".tif"
-            ) and not os.path.exists(OutDir[2] + "CellShape_" + OutPos[i] + ".npz"):
+                f"{OutDir[1]}CellSegFinal_{OutPos[i]}.tif"
+            ) and not os.path.exists(f"{OutDir[2]}CellShape_{OutPos[i]}.npz"):
                 print("Cell Shape Pre-Processing; ")
-                CellImages = tiff.imread(
-                    OutDir[1] + "CellSegFinal_" + OutPos[i] + ".tif"
+                CellImages = io.imread(
+                    f"{OutDir[1]}CellSegFinal_{OutPos[i]}.tif"
                 )
                 CellImages = cell_shape_images(CellImages)
-                np.savez_compressed(OutDir[2] + "CellShape_" + OutPos[i], CellImages)
+                np.savez_compressed(f"{OutDir[2]}CellShape_{OutPos[i]}", CellImages)
                 # np.savez_compressed(OutDir[2] + 'CellShape_' + OutPos[i] + '.npz', CellImages)
             if i == (len(PosList) - 1):
                 print("Training Autoencoder; ")
@@ -539,7 +538,7 @@ def CellSeg(SlideDir, quantify, shape, stroma, tumor, start):
                 header = ["ID", "Pos", "Selec"]
                 for k in range(1, 257):
                     header.append("Enc" + str(k))
-                with open(OutDir[2] + "EncodedCells.csv", "w", newline="") as f:
+                with open(f"{OutDir[2]}EncodedCells.csv", "w", newline="") as f:
                     writer = csv.writer(f)
                     writer.writerow(header)
                     writer.writerows(trainList)
