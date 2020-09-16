@@ -49,7 +49,7 @@ def MxIF_quantify(
     NoOvlp = np.zeros((s[0], s[1], 3))
     for j in range(len(AFList)):
         print(AFList[j] + " ")
-        AFim = tiff.imread(
+        AFim = io.imread(
             AFRemoved + "/" + AFList[j] + "_AFRemoved_" + OutPos[i] + ".tif"
         )
         AForig = np.copy(AFim)
@@ -185,7 +185,7 @@ def MxIF_quantify_stroma(
     NoOvlp = np.zeros((s[0], s[1], 3))
     for j in range(len(AFList)):
         print(AFList[j] + " ")
-        AFim = tiff.imread(
+        AFim = io.imread(
             AFRemoved + "/" + AFList[j] + "_AFRemoved_" + OutPos[i] + ".tif"
         )
         AForig = np.copy(AFim)
