@@ -1,6 +1,5 @@
 import numpy as np
-from skimage import measure, morphology
-import tifffile as tiff
+from skimage import measure, morphology, io
 
 
 def MxIF_quantify(
