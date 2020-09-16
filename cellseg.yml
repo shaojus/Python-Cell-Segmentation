@@ -4,23 +4,23 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  - geotiff
-  - imageio
-  - keras
-  - keras-applications
-  - keras-base
-  - keras-preprocessing
-  - numpy
+  - geotiff=1.6.0
+  - imageio=2.9.0
+  - keras=2.3.1
+  - keras-applications=1.0.8
+  - keras-base=2.3.1
+  - keras-preprocessing=1.1.0
+  - numpy=1.19.1
   - pip
-  - scikit-fmm
-  - scikit-image
-  - scipy
-  - tifffile
-  - tensorboard
-  - tensorflow
-  - tensorflow-base
-  - tensorflow-estimator
+  - scikit-fmm=2019.1.30
+  - scikit-image=0.17.2
+  - scipy=1.5.2
+  - tensorboard=2.0.0
+  - tensorflow=2.0.0
+  - tensorflow-base=2.0.0
+  - tensorflow-estimator=2.0.0
   - pip:
-    - opencv-python
+    - opencv-python==4.4.0.42
+    - napari[pyside2]
 prefix: //anaconda3/envs/cellseg
 
