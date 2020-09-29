@@ -237,7 +237,7 @@ def CellSeg(SlideDir, quantify, shape, stroma, tumor, start):
             for j in range(
                 len(AFList)
             ):  # loop through AFRemoved images and append to tiff stack
-                skimage.external.tifffile.imsave(
+                    io.imsave(
                     f"{OutDir[10]}{OutPos[i]}_stack.tif",
                     io.imread(
                         f"{AFRemoved}/{AFList[j]}_AFRemoved_{OutPos[i]}.tif"
