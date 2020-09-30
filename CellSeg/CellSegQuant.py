@@ -233,26 +233,22 @@ def CellSeg(SlideDir, quantify, shape, stroma, tumor, start):
         if not os.path.exists(f"{OutDir[10]}{OutPos[i]}_stack.tif"):
             print(f"Stack: {OutPos[i]}")
             # form tif image stack for each position with images from each marker
-            io.imsave(f"{OutDir[10]}{OutPos[i]}_stack.tif", io.imread(DapiList[i]))
+            # io.imsave(f"{OutDir[10]}{OutPos[i]}_stack.tif", io.imread(DapiList[i]))
+            stack = []
+            stack.append(io.imread(DapiList[i]))
             for j in range(
                 len(AFList)
             ):  # loop through AFRemoved images and append to tiff stack
-                    io.imsave(
-                    f"{OutDir[10]}{OutPos[i]}_stack.tif",
-                    io.imread(
-                        f"{AFRemoved}/{AFList[j]}_AFRemoved_{OutPos[i]}.tif"
-                    ),
-                    append=True,
+                stack.append(
+                    io.imread(f"{AFRemoved}/{AFList[j]}_AFRemoved_{OutPos[i]}.tif")
                 )
+            stack = np.asarray(stack)
+            io.imsave(f"{OutDir[10]}{OutPos[i]}_stack.tif", stack)
         # Check for probability files
-        if not os.path.exists(
-            f"{OutDir[4]}epi_{OutPos[i]}_stack_Probabilities.png"
-        ):
+        if not os.path.exists(f"{OutDir[4]}epi_{OutPos[i]}_stack_Probabilities.png"):
             print("No Epithelial Probability File")
             continue
-        if not os.path.exists(
-            f"{OutDir[4]}mem_{OutPos[i]}_stack_Probabilities.png"
-        ):
+        if not os.path.exists(f"{OutDir[4]}mem_{OutPos[i]}_stack_Probabilities.png"):
             print("No Membrane/Nucleus Probabilty File")
             continue
 
@@ -263,9 +259,7 @@ def CellSeg(SlideDir, quantify, shape, stroma, tumor, start):
             or os.path.exists(f"{OutDir[5]}MemMask_{OutPos[i]}.png")
         ):
             # read in membrane probability file
-            Probs = io.imread(
-                f"{OutDir[4]}mem_{OutPos[i]}_stack_Probabilities.png"
-            )
+            Probs = io.imread(f"{OutDir[4]}mem_{OutPos[i]}_stack_Probabilities.png")
 
             # threshold with nuclear probability >0.6 for nuclear mask
             mask = np.where(Probs[:, :, 1] > 255 * 0.6, np.uint8(255), np.uint8(0))
@@ -355,9 +349,7 @@ def CellSeg(SlideDir, quantify, shape, stroma, tumor, start):
             if not (os.path.exists(f"{OutDir[1]}CellSegFinal_{OutPos[i]}.tif")):
                 CellSeg = io.imread(f"{OutDir[0]}CellSeg_{OutPos[i]}.tif")
                 SuperMem = io.imread(f"{OutDir[11]}SuperMem_{OutPos[i]}.tif")
-                Probs = io.imread(
-                    f"{OutDir[4]}mem_{OutPos[i]}_stack_Probabilities.png"
-                )
+                Probs = io.imread(f"{OutDir[4]}mem_{OutPos[i]}_stack_Probabilities.png")
                 # check for cells with multiple nuclei and re-segment if they exist
                 (watcellseg, mask) = NucCountBatch(
                     CellSeg, mask, epiMask, MemMask, [], Probs[:, :, 1], SuperMem
@@ -400,9 +392,7 @@ def CellSeg(SlideDir, quantify, shape, stroma, tumor, start):
                 )
 
             else:
-                watcellseg = io.imread(
-                    f"{OutDir[1]}CellSegFinal_{OutPos[i]}.tif"
-                )
+                watcellseg = io.imread(f"{OutDir[1]}CellSegFinal_{OutPos[i]}.tif")
                 mask = io.imread(f"{OutDir[8]}NucMaskFinal_{OutPos[i]}.png") > 0
         else:
             watcellseg = io.imread(f"{OutDir[1]}CellSegFinal_{OutPos[i]}.tif")
@@ -426,9 +416,7 @@ def CellSeg(SlideDir, quantify, shape, stroma, tumor, start):
                     )
 
                 if tumor == 1:
-                    if not os.path.exists(
-                        f"{OutDir[4]}TumorMask_{OutPos[i]}.png"
-                    ):
+                    if not os.path.exists(f"{OutDir[4]}TumorMask_{OutPos[i]}.png"):
                         tumorMask = io.imread(
                             f"{OutDir[4]}tum_{OutPos[i]}_stack_Probabilities.png"
                         )
@@ -451,9 +439,7 @@ def CellSeg(SlideDir, quantify, shape, stroma, tumor, start):
 
                 # format data table and write
                 transposed_data = list(zip_longest(*Stats.values()))
-                with open(
-                    r"{OutDir[9]}PosStats_{OutPos[i]}.csv", "w", newline=""
-                ) as f:
+                with open(r"{OutDir[9]}PosStats_{OutPos[i]}.csv", "w", newline="") as f:
                     writer = csv.writer(f)
                     writer.writerow(Stats.keys())
                     writer.writerows(transposed_data)
@@ -471,9 +457,7 @@ def CellSeg(SlideDir, quantify, shape, stroma, tumor, start):
                 f"{OutDir[9]}StrPosStats_{OutPos[i]}.csv"
             ) or not os.path.exists(f"{OutDir[6]}StrNovlp{OutPos[i]}.png"):
                 stromal_nuclei = stromal_nuclei_segmentation(
-                    io.imread(
-                        f"{OutDir[4]}str_{OutPos[i]}_stack_Probabilities.png"
-                    )
+                    io.imread(f"{OutDir[4]}str_{OutPos[i]}_stack_Probabilities.png")
                 )
                 stromal_nuclei[epiMask == 1] = 0
                 stromal_grow = morphology.binary_dilation(
@@ -525,9 +509,7 @@ def CellSeg(SlideDir, quantify, shape, stroma, tumor, start):
                 f"{OutDir[1]}CellSegFinal_{OutPos[i]}.tif"
             ) and not os.path.exists(f"{OutDir[2]}CellShape_{OutPos[i]}.npz"):
                 print("Cell Shape Pre-Processing; ")
-                CellImages = io.imread(
-                    f"{OutDir[1]}CellSegFinal_{OutPos[i]}.tif"
-                )
+                CellImages = io.imread(f"{OutDir[1]}CellSegFinal_{OutPos[i]}.tif")
                 CellImages = cell_shape_images(CellImages)
                 np.savez_compressed(f"{OutDir[2]}CellShape_{OutPos[i]}", CellImages)
                 # np.savez_compressed(OutDir[2] + 'CellShape_' + OutPos[i] + '.npz', CellImages)
