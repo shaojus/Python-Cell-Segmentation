@@ -227,11 +227,11 @@ def CellSeg(SlideDir, quantify, shape, stroma, tumor, start):
     print("Segmentation of:", SlideDir, ";", str(len(PosList)), " Positions;\n")
 
     # Segmentation and Quantification for each position
-    for i in range(start, len(PosList)):
-        print(f"{OutPos[i]}:")
+    for i in (start, range(len(PosList))):
+        print("{}:".format(OutPos[i]))
         # make Stacks of AFRemoved images and Dapi if they don't exist
-        if not os.path.exists(f"{OutDir[10]}{OutPos[i]}_stack.tif"):
-            print(f"Stack: {OutPos[i]}")
+        if not os.path.exists(OutDir[10] + OutPos[i] + "_stack.tif"):
+            print("Stack:".format(OutPos[i]))
             # form tif image stack for each position with images from each marker
             # io.imsave(f"{OutDir[10]}{OutPos[i]}_stack.tif", io.imread(DapiList[i]))
             stack = []
