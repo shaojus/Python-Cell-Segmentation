@@ -206,11 +206,15 @@ def CellSeg(SlideDir, quantify, shape, stroma, tumor, start):
     AFFiles = os.listdir(AFRemoved)
     AFList = []
     for file in AFFiles:
-        AFList.append(file.split("_AFRemoved_"))
-    AFList = np.asarray(AFList)
-    AFList = np.resize(AFList, (95, 1, 2))
-    PosList = np.unique(AFList[:, :, 1])
-    AFList = np.unique(AFList[:, :, 0])  # list of markers
+        AFList.append(file.split("_AFRemoved_")[0])
+    AFList = np.unique(np.asarray(AFList))
+    #AFList = np.resize(AFList, (95, 1, 2))
+    #PosList = np.unique(AFList[:, :, 1])
+    #AFList = np.unique(AFList[:, :, 0])  # list of markers
+    PosList = []
+    for file in AFFiles:
+        PosList.append(file.split("_")[-1])
+    PosList = np.unique(np.array(PosList))
     PosList = np.char.replace(PosList, ".tif", "")  # list of positions
     OutPos = PosList
 
